@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 13px Arial, sans-serif; width: 360px; padding: 14px; background: #111; color: #eee; margin: 0; }
+  h1 { font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tab { flex: 1; padding: 8px; text-align: center; background: #1c1c1c; border-radius: 8px; cursor: pointer; user-select: none; }
+  .tab.active { background: #4f46e5; color: #fff; }
+  .row { margin: 8px 0; padding: 10px; background: #1c1c1c; border-radius: 8px; font-size: 13px; }
+  .muted { color: #888; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+  button { width: 100%; padding: 9px; margin: 5px 0; border: 0; border-radius: 8px; cursor: pointer; font-size: 13px; background: #2a2a2a; color: #eee; }
+  button:hover { background: #333; }
+  button.primary { background: #4f46e5; color: #fff; }
+  button.primary:hover { background: #4338ca; }
+  button.danger { background: #7f1d1d; color: #fff; }
+  button.danger:hover { background: #991b1b; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; margin: 8px 0 0; color: #aaa; max-height: 120px; overflow: auto; }
+  .code { font-family: monospace; background: #000; padding: 3px 6px; border-radius: 6px; letter-spacing: 1px; color: #4ade80; }
+  .raid { border-left: 3px solid #4f46e5; padding-left: 10px; margin: 10px 0; }
+  .raid .time { font-weight: bold; color: #a5b4fc; }
+  a { color: #93c5fd; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .hide { display: none !important; }
+</style>
+</head>
+<body>
+  <h1>🎮 Madhouse Stats <span class="muted" style="font-size:11px">v0.3.1</span></h1>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="profile">👤 Профиль</div>
+    <div class="tab" data-tab="raids">📅 Рейды</div>
+  </div>
+
+  <div id="tab-profile">
+    <div id="status" class="row">Загрузка...</div>
+
+    <div id="linkBox" class="row hide">
+      <div>Открой бота и нажми Start:</div>
+      <div style="margin:8px 0"><button class="primary" id="openBot">🤖 Открыть бота</button></div>
+      <div class="muted" id="waiting">Ожидаю подтверждения...</div>
+      <div class="muted" style="font-size:11px;margin-top:6px">Код: <span class="code" id="code">------</span></div>
+    </div>
+
+    <button class="primary" id="link" style="display:none">🔗 Привязать аккаунт</button>
+    <button id="sync" style="display:none">🔄 Синхронизировать сейчас</button>
+    <button class="danger" id="unlink" style="display:none">🚪 Отвязать</button>
+
+    <pre id="out"></pre>
+  </div>
+
+  <div id="tab-raids" class="hide">
+    <button id="refreshRaids">🔄 Обновить</button>
+    <div id="raidsList" class="muted" style="margin-top:8px">Загрузка...</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
