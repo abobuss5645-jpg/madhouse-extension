@@ -6,12 +6,10 @@
   const CACHE_TTL_MS = 5 * 60 * 1000;
   const NEGATIVE_TTL_MS = 5 * 60 * 1000;
   const DEBOUNCE_MS = 500;
-  const RETRY_MS = 500;
 
   let lastPeerId = null;
   let lastRenderedPeerId = null;
   let debounceTimer = null;
-  let retryTimer = null;
 
   const cache = new Map();
 
@@ -39,15 +37,13 @@
   }
 
   function findPane() {
-    const el = document.querySelector(".profile-content");
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    if (r.width < 200 || r.height < 200) return null;
-    const classes = String(el.className || "");
-    if (classes.includes("bubbles")) return null;
-    return el;
+    const profileContent = document.querySelector(".profile-content");
+    if (profileContent) {
+      const r = profileContent.getBoundingClientRect();
+      if (r.width > 250 && r.height > 200) return profileContent;
+    }
+    return null;
   }
-
   function esc(v) {
     return String(v ?? "—").replace(/[&<>"']/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
@@ -120,62 +116,31 @@
       "box-shadow:0 1px 5px rgba(0,0,0,.15);" +
       "border:1px solid rgba(79,70,229,.4);";
 
-    const pane = findPane();
-    if (!pane) return; // не в чат!
+        const pane = findPane();
+    if (!pane) return;
     pane.appendChild(card);
     setTimeout(() => {
       try { card.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch {}
     }, 100);
     lastRenderedPeerId = peerId;
-  }
-
-  function clearRetry() {
-    if (retryTimer) {
-      clearTimeout(retryTimer);
-      retryTimer = null;
-    }
-  }
 
   async function render() {
     const peerId = findProfilePeerId();
-
     if (!peerId) {
       removeCard();
       lastPeerId = null;
-      clearRetry();
       return;
     }
-
-    // Уже отрисовано для этого peerId — не трогаем
-    if (
-      peerId === lastRenderedPeerId &&
-      document.getElementById("madhouse-profile-card")
-    ) {
-      return;
-    }
-
+    if (peerId === lastPeerId && lastRenderedPeerId === peerId) return;
     lastPeerId = peerId;
+    if (peerId === lastRenderedPeerId) return;
 
     const entry = await fetchPlayer(peerId);
-
-    // Пользователь мог переключиться, пока грузили
     if (findProfilePeerId() !== peerId) return;
-
     if (entry.notFound || !entry.data) {
       removeCard();
       return;
     }
-
-    // Панель профиля ещё не появилась — попробуем позже
-    if (!findPane()) {
-      clearRetry();
-      retryTimer = setTimeout(() => {
-        retryTimer = null;
-        render().catch(() => {});
-      }, RETRY_MS);
-      return;
-    }
-
     renderCard(peerId, entry.data);
   }
 
