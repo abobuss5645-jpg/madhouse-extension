@@ -187,6 +187,27 @@ async function runSync() {
       await setState({ lastError: `HTTP ${r.status}: ${JSON.stringify(d)}` });
       return;
     }
+        // ─── Сбор друзей ───
+    try {
+      const frame = await findMadhouseFrame();
+      if (frame) {
+        const fr = await sendToFrame(frame.tabId, frame.frameId, { type: "COLLECT_FRIENDS" });
+        if (fr.ok && fr.friends?.length) {
+          const r2 = await fetch(`${API}/api/sync/friends`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${installToken}`,
+            },
+            body: JSON.stringify({ friends: fr.friends }),
+          });
+          const d2 = await r2.json().catch(() => ({}));
+          console.log("[SW] friends synced:", d2.imported, "/", fr.friends.length);
+        }
+      }
+    } catch (e) {
+      console.warn("[SW] friends failed:", e.message);
+    }
 
     await setState({
       lastSync: { ok: true, time: new Date().toISOString(), level, stats },
