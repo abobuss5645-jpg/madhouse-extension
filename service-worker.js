@@ -3,7 +3,7 @@
 const API = "https://glistening-determination-production-c2f5.up.railway.app";
 const TG_WEB_URL = "https://web.telegram.org/*";
 const MADHOUSE_ORIGIN = "https://cargohustle.online";
-const SYNC_PERIOD_MIN = 5;
+const SYNC_PERIOD_MIN = 180;
 const SYNC_ALARM = "madhouseSync";
 
 async function getState() {
