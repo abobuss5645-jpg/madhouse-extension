@@ -38,7 +38,7 @@
     "default_title": "MadTrack",
     "default_popup": "popup.html",
     "default_icon": {
-      "128": "icon-128.png"
+      "128": "icon.png"
     }
   }
 }
