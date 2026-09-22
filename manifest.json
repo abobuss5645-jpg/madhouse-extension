@@ -32,7 +32,7 @@
     }
   ],
   "icons": {
-    "128": "icon-128.png"
+    "128": "icon.png"
   },
   "action": {
     "default_title": "MadTrack",
