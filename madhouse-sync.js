@@ -78,16 +78,115 @@ async function collectStats() {
 
   return { telegramId, nickname, level, stats, clan };
 }
+async function collectClanMembers() {
+  const session = readSession();
+  const { playerId, accessToken } = session;
+
+  // 1. Узнаём clanId из API игрока
+  const pr = await fetch(`/api/players/${encodeURIComponent(playerId)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!pr.ok) throw new Error(`players HTTP ${pr.status}`);
+  const player = await pr.json();
+  const clanId = player?.clan?.clanId;
+  if (!clanId) return { clanId: null, members: [] };
+
+  // 2. Дёргаем участников клана
+  const r = await fetch(`/api/clans/${encodeURIComponent(clanId)}/members`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!r.ok) throw new Error(`clans HTTP ${r.status}`);
+  const d = await r.json();
+  const items = d.items || [];
+
+  const members = items
+    .map((m) => ({
+      playerId: String(m.playerId),
+      username: m.username || null,
+      nickname: m.nickname || null,
+      level: Number.isFinite(m.level) ? m.level : null,
+      role: m.role || null,
+      totalImpact: Number.isFinite(m.totalImpact) ? m.totalImpact : null,
+    }))
+    .filter((m) => /^\d+$/.test(m.playerId));
+
+  return { clanId: String(clanId), members };
+}
+async function collectFriends() {
+  const session = readSession();
+  const { accessToken } = session;
+
+  const all = [];
+  let cursor = null;
+  let pages = 0;
+  const MAX_PAGES = 10;
+
+  while (pages < MAX_PAGES) {
+    const url = cursor
+      ? `/api/friends?limit=100&cursor=${encodeURIComponent(cursor)}`
+      : `/api/friends?limit=100`;
+
+    const r = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!r.ok) break;
+
+    const d = await r.json();
+    const items = d.items || [];
+    for (const item of items) {
+      const p = item.player || item;
+      if (!p?.playerId) continue;
+      all.push({
+        playerId: String(p.playerId),
+        nickname: p.nickname || p.username || null,
+        level: p.level ?? null,
+        aggression: p.stats?.aggression ?? null,
+        madness: p.stats?.madness ?? null,
+        rage: p.stats?.rage ?? null,
+      });
+    }
+
+    cursor = d.nextCursor || null;
+    if (!cursor || items.length === 0) break;
+    pages++;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+
+  return all;
+}
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type !== "COLLECT_STATS") return;
-  (async () => {
-    try {
-      const data = await collectStats();
-      sendResponse({ ok: true, ...data });
-    } catch (err) {
-      sendResponse({ ok: false, error: String(err?.message || err) });
-    }
-  })();
-  return true;
+    if (msg?.type === "COLLECT_CLAN") {
+    (async () => {
+      try {
+        const data = await collectClanMembers();
+        sendResponse({ ok: true, ...data });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true;
+  }
+  if (msg?.type === "COLLECT_STATS") {
+    (async () => {
+      try {
+        const data = await collectStats();
+        sendResponse({ ok: true, ...data });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true;
+  }
+  if (msg?.type === "COLLECT_FRIENDS") {
+    (async () => {
+      try {
+        const friends = await collectFriends();
+        sendResponse({ ok: true, friends });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true;
+  }
 });

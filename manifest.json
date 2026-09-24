@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Madhouse Telegram Profile Stats",
+  "name": "MadTrack",
   "version": "0.3.1",
   "description": "Автосинхронизация Madhouse и показ статистики в профилях Telegram Web.",
   "permissions": [
@@ -31,8 +31,14 @@
       "all_frames": false
     }
   ],
+  "icons": {
+    "128": "icon.png"
+  },
   "action": {
-    "default_title": "Madhouse Stats",
-    "default_popup": "popup.html"
+    "default_title": "MadTrack",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon.png"
+    }
   }
 }

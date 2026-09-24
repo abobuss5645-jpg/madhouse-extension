@@ -150,6 +150,8 @@ async function checkLinkStatus() {
   return { ok: true, linked: false };
 }
 
+
+
 let syncBusy = false;
 
 async function runSync() {
@@ -188,6 +190,50 @@ async function runSync() {
       return;
     }
 
+    // ─── Сбор друзей ───
+    try {
+      const frame = await findMadhouseFrame();
+      if (frame) {
+        const fr = await sendToFrame(frame.tabId, frame.frameId, { type: "COLLECT_FRIENDS" });
+        if (fr.ok && fr.friends?.length) {
+          const r2 = await fetch(`${API}/api/sync/friends`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${installToken}`,
+            },
+            body: JSON.stringify({ friends: fr.friends }),
+          });
+          const d2 = await r2.json().catch(() => ({}));
+          console.log("[SW] friends synced:", d2.imported, "/", fr.friends.length);
+        }
+      }
+    } catch (e) {
+      console.warn("[SW] friends failed:", e.message);
+    }
+
+    // ─── Сбор участников клана ───
+    try {
+      const frame = await findMadhouseFrame();
+      if (frame) {
+        const cl = await sendToFrame(frame.tabId, frame.frameId, { type: "COLLECT_CLAN" });
+        if (cl.ok && cl.clanId && cl.members?.length) {
+          const r3 = await fetch(`${API}/api/sync/clan`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${installToken}`,
+            },
+            body: JSON.stringify({ clanId: cl.clanId, members: cl.members }),
+          });
+          const d3 = await r3.json().catch(() => ({}));
+          console.log("[SW] clan synced:", d3.imported, "/", cl.members.length);
+        }
+      }
+    } catch (e) {
+      console.warn("[SW] clan failed:", e.message);
+    }
+
     await setState({
       lastSync: { ok: true, time: new Date().toISOString(), level, stats },
       lastError: null,
@@ -198,11 +244,4 @@ async function runSync() {
   } finally {
     syncBusy = false;
   }
-}
-
-async function unlink() {
-  await setState({
-    installToken: null, telegramId: null, linkCode: null,
-    linkExpiresAt: null, linkedAt: null, lastSync: null, lastError: null,
-  });
 }
